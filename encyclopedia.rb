@@ -38,6 +38,16 @@ class Subtitle
       "tincture of #{@concept}",
       "distilled #{@concept}",
       "anti-#{@concept} draught",
+      "#{@concept} extract",
+      "concentrated #{@concept}",
+      "oil of #{@concept}",
+      "#{@concept} essence",
+      "fermented #{@concept}",
+      "twice-distilled #{@concept}",
+      "juice of #{@concept}",
+      "#{@concept} vapor",
+      "#{@concept} oil",
+      "reduction of #{@concept}"
     ]
   end
 end
@@ -81,7 +91,7 @@ class Sparql
     # There are about 38334 orchids in Wikidata as of November 2018
     offset = rand 1..38334 
 
-    # Instance of (P31) concept (Q151885)
+    # based on "Mosquito species" example
     query = <<~ORCHID
       SELECT ?item ?taxonname WHERE {
         ?item wdt:P31 wd:Q16521.

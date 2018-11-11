@@ -9,3 +9,7 @@ Style/StringLiterals:
   Enabled: false
 Metrics/MethodLength:
   Enabled: false
+Style/NumericLiterals:
+  Enabled: false
+Style/AsciiComments:
+  Enabled: false

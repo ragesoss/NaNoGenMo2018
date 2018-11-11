@@ -16,7 +16,7 @@ class Sparql
 
   def random_concept_label
     # There are about 1500 concepts in Wikidata as of November 2018
-    offset = rand 1..1500 
+    offset = rand 1..1500
 
     # Instance of (P31) concept (Q151885)
     query = <<~CONCEPT
@@ -36,15 +36,18 @@ class Sparql
 
   def random_orchid_q_item
     # There are about 38334 orchids in Wikidata as of November 2018
-    offset = rand 1..38334 
+    # 4644 have images.
+    offset = rand 1..4644
 
     # based on "Mosquito species" example
+    # wd:Q25308 — Orchidaceae
     query = <<~ORCHID
-      SELECT ?item ?taxonname WHERE {
+      SELECT ?item ?taxonname ?image WHERE {
         ?item wdt:P31 wd:Q16521.
         ?item wdt:P105 wd:Q7432.
         ?item wdt:P171* wd:Q25308.
         ?item wdt:P225 ?taxonname.
+        ?item wdt:P18 ?image.
       }
       OFFSET #{offset}
       LIMIT 1

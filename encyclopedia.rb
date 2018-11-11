@@ -1,6 +1,7 @@
 require 'reality' # gem install reality -v 0.1.0.alpha3
 require 'faraday'
 require_relative './sparql'
+require_relative './primitive'
 
 PINK_ROCK_ORCHID = 'Q3387434'
 
@@ -9,6 +10,8 @@ class Entry
   def self.random
     new(Sparql.orchid)
   end
+
+  attr_reader :wikidata_entity
 
   def initialize(q_item = PINK_ROCK_ORCHID)
     pp q_item
@@ -24,7 +27,15 @@ class Entry
   end
 
   def subtitle
-    Subtitle.random
+    @subtitle ||= Subtitle.random
+  end
+
+  def image_url
+    @wikidata_entity['image']&.load&.[]('meta.thumb')
+  end
+
+  def illustration
+    Primitive.new(image_url, title).location
   end
 
   def body
@@ -35,6 +46,7 @@ class Entry
     <<~MARKDOWN
       ## #{title}
       ### #{subtitle}
+      ![#{subtitle}][#{illustration}]
       #{body}
     MARKDOWN
   end

@@ -1,7 +1,28 @@
+# Requires pandoc:
+# apt install pandoc
+
 require 'reality' # gem install reality -v 0.1.0.alpha3
 require 'faraday'
 require_relative './sparql'
 require_relative './primitive'
+
+# Generate a book full of entries
+class Encyclopedia
+  def generate(entry_count = 4)
+    @output = <<~FRONT_MATTER
+      % Encyclopedia of Orchid Cures
+      % Sage Ross
+
+    FRONT_MATTER
+    entry_count.times do
+      @output += "\n"
+      @output += Entry.random.to_markdown
+    end
+
+    File.write 'encyclopedia.md', @output
+    `pandoc encyclopedia.md -o encyclopedia.epub`
+  end
+end
 
 PINK_ROCK_ORCHID = 'Q3387434'
 
@@ -45,8 +66,11 @@ class Entry
   def to_markdown
     <<~MARKDOWN
       ## #{title}
+
       ### #{subtitle}
-      ![#{subtitle}][#{illustration}]
+
+      ![#{subtitle}](#{illustration})
+
       #{body}
     MARKDOWN
   end

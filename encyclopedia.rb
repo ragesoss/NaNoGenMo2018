@@ -29,13 +29,16 @@ PINK_ROCK_ORCHID = 'Q3387434'
 # An entry in encyclopedia
 class Entry
   def self.random
-    new(Sparql.orchid)
+    @sparql ||= Sparql.new
+    new(Sparql.orchid, @sparql)
   end
 
   attr_reader :wikidata_entity
 
-  def initialize(q_item = PINK_ROCK_ORCHID)
+  def initialize(q_item, sparql)
     pp q_item
+    pp sparql
+    @sparql = sparql
     @wikidata_entity = Reality.wikidata.get(q_item)
   end
 
@@ -60,7 +63,10 @@ class Entry
   end
 
   def body
-    'lorem ipsum ' * 60
+    occupation = @sparql.old_occupations.keys.sample
+    occupation_q_number = @sparql.old_occupations[occupation]
+
+    OriginStory.new(occupation, occupation_q_number, title).generate + 'lorem ipsum ' * 60
   end
 
   def to_markdown
@@ -106,3 +112,37 @@ class Subtitle
     ]
   end
 end
+
+class OriginStory
+  def initialize(occupation, occupation_q_number, medicine_name)
+    @occupation = occupation
+    @medicine_name = medicine_name
+    @occupation_entity = Reality.wikidata.get(occupation_q_number)
+  end
+
+  def generate
+    origin = ORIGINS.sample
+    effect = EFFECTS.sample
+    "#{origin} by #{@occupation}s for inducing #{effect}, #{@medicine_name} is prepared by boiling the root."
+  end
+end
+
+# TODO: replace with Wikidata stuff
+EFFECTS = [
+  'arachnophobia',
+  'hallucinations',
+  'vomiting',
+  'glossolalia',
+  'euphoria',
+]
+
+
+ORIGINS = [
+  'known since antiquity',
+  'revered since early modern times',
+  'rumored to be a component in pagan solstice rituals',
+  'valued initially',
+  'carried to the old continent',
+  'discovered and forgotten countless times',
+  ''
+]

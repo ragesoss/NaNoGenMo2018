@@ -139,10 +139,16 @@ class OriginStory
   def initialize(sparql, entry)
     @sparql = sparql
     @entry = entry
+    set_occupation
+    @disease = @sparql.diseases.keys.sample
+  end
+
+  def set_occupation
     @occupation = @sparql.old_occupations.keys.sample
     @occupation_q_number = @sparql.old_occupations[@occupation]
     @occupation_entity = Reality.wikidata.get(@occupation_q_number)
-    @disease = @sparql.diseases.keys.sample
+  rescue
+    retry
   end
 
   def generate

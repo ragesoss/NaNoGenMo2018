@@ -8,7 +8,7 @@ require_relative './primitive'
 
 # Generate a book full of entries
 class Encyclopedia
-  def generate(entry_count = 4)
+  def generate(entry_count = 4, images = false)
     @output = <<~FRONT_MATTER
       % Encyclopedia of Orchid Cures
       % Sage Ross
@@ -16,7 +16,7 @@ class Encyclopedia
     FRONT_MATTER
     entry_count.times do
       @output += "\n"
-      @output += Entry.random.to_markdown
+      @output += Entry.random.to_markdown(images: images)
     end
 
     File.write 'encyclopedia.md', @output
@@ -35,9 +35,8 @@ class Entry
 
   attr_reader :wikidata_entity
 
-  def initialize(q_item, sparql)
+  def initialize(q_item, sparql = Sparql.new)
     pp q_item
-    pp sparql
     @sparql = sparql
     @wikidata_entity = Reality.wikidata.get(q_item)
   end
@@ -58,24 +57,37 @@ class Entry
     @wikidata_entity['image']&.load&.[]('meta.thumb')
   end
 
+  def endemic_to
+    @wikidata_entity['endemic to']&.title
+  end
+
+  def conservation_status
+    @wikidata_entity['IUCN conservation status']&.title
+  end
+
+  def named_after
+    @wikidata_entity['named after']&.title
+  end
+
   def illustration
     Primitive.new(image_url, title).location
   end
 
   def body
-    occupation = @sparql.old_occupations.keys.sample
-    occupation_q_number = @sparql.old_occupations[occupation]
-
-    OriginStory.new(occupation, occupation_q_number, title).generate + 'lorem ipsum ' * 60
+    OriginStory.new(@sparql, self).generate
   end
 
-  def to_markdown
+  def markdown_image
+    "![#{subtitle}](#{illustration})"
+  end
+
+  def to_markdown(images: false)
     <<~MARKDOWN
       ## #{title}
 
       ### #{subtitle}
 
-      ![#{subtitle}](#{illustration})
+      #{markdown_image if images}
 
       #{body}
     MARKDOWN
@@ -114,28 +126,137 @@ class Subtitle
 end
 
 class OriginStory
-  def initialize(occupation, occupation_q_number, medicine_name)
-    @occupation = occupation
-    @medicine_name = medicine_name
-    @occupation_entity = Reality.wikidata.get(occupation_q_number)
+  def initialize(sparql, entry)
+    @sparql = sparql
+    @entry = entry
+    @occupation = @sparql.old_occupations.keys.sample
+    @occupation_q_number = @sparql.old_occupations[@occupation]
+    @occupation_entity = Reality.wikidata.get(@occupation_q_number)
+    @disease = @sparql.diseases.keys.sample
   end
 
   def generate
     origin = ORIGINS.sample
-    effect = EFFECTS.sample
-    "#{origin} by #{@occupation}s for inducing #{effect}, #{@medicine_name} is prepared by boiling the root."
+    part = PLANT_PARTS.sample
+    process = PROCESSES.sample
+    "#{origin.capitalize} by #{@occupation}s for inducing #{@disease}, " \
+      "the *#{@entry.title}* __#{@entry.subtitle}__ is prepared by #{process} the #{part}."
   end
 end
 
-# TODO: replace with Wikidata stuff
-EFFECTS = [
-  'arachnophobia',
-  'hallucinations',
-  'vomiting',
-  'glossolalia',
-  'euphoria',
+# Based on instances of Q898987 (separation process)
+PROCESSES = [
+  'recrystallization',
+  'distillation',
+  'adsorption',
+  'filtration',
+  'syneresis',
+  'decatation',
+  'gold cyanidation',
+  'extraction',
+  'liquid–liquid extraction',
+  'cupellation',
+  'desorption',
+  'electrofiltration',
+  'centrifugation'
 ]
 
+# Based on instances of Q20011319 (part of a plant)
+PLANT_PARTS = [
+  'leaf',
+  'root',
+  'trama',
+  'protoplasm',
+  'plant stem',
+  'ovary',
+  'bark',
+  'phloem',
+  'tylose',
+  'bulb',
+  'flagellum',
+  'pith',
+  'trunk',
+  'haustorium',
+  'stomates',
+  'zoospore',
+  'cystidium',
+  'mazaedium',
+  'prothallium',
+  'elaioplast',
+  'stipule',
+  'propagule',
+  'thylakoid',
+  'phytotelma',
+  'vascular cambium',
+  'sclerenchyma',
+  'aecium',
+  'exodermis',
+  'amyloplast',
+  'hydrogenosome',
+  'stroma',
+  'annulus',
+  'etioplast',
+  'apicalmeristem',
+  'ascocarp',
+  'appressorium',
+  'oospore',
+  'leaf scar',
+  'leucoplast',
+  'basidium',
+  'proteinoplast',
+  'epidermis',
+  'endospore',
+  'buttress root',
+  'phelloderme',
+  'hymenium',
+  'mesophylle',
+  'Sclereid',
+  'vessel element',
+  'vascular bundle',
+  'Casparian strip',
+  'plant cell',
+  'aerial root',
+  'sporopollenin',
+  'ochrea',
+  'cleistothecium',
+  'telium',
+  'cortina',
+  'collenchyma',
+  'plant cuticle',
+  'paraphyllium',
+  'lenticel',
+  'cortex',
+  'endodermis',
+  'granule',
+  'cork cambium',
+  'root hair',
+  'excipulum',
+  'periderm',
+  'tracheid',
+  'prosenchym',
+  'middle lamella',
+  'pulp',
+  'hymenophore',
+  'gerontoplast',
+  'bolva',
+  'uredinium',
+  'wood fiber',
+  'wood ray',
+  'hypodermis',
+  'rhizodermis',
+  'pedicel',
+  'spermogonium',
+  'conidiophor',
+  'carpofor',
+  'mycelial cord',
+  'context',
+  'spur',
+  'dikaryon',
+  'veil',
+  'sporangiofoor',
+  'cork layer',
+  'peridium'
+]
 
 ORIGINS = [
   'known since antiquity',
@@ -143,6 +264,5 @@ ORIGINS = [
   'rumored to be a component in pagan solstice rituals',
   'valued initially',
   'carried to the old continent',
-  'discovered and forgotten countless times',
-  ''
+  'discovered and forgotten countless times'
 ]

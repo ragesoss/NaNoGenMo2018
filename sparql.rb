@@ -60,8 +60,34 @@ class Sparql
     response_data["results"]["bindings"][0]["item"]["value"][/Q.*/]
   end
 
+  def diseases
+    return @diseases unless @diseases.nil?
+
+    query = <<~DISEASES
+      SELECT ?disease ?diseaseLabel WHERE {
+        SERVICE wikibase:label { bd:serviceParam wikibase:language "[AUTO_LANGUAGE],en". }
+        ?disease wdt:P31/wdt:P279* wd:Q12136.
+      }
+    DISEASES
+
+    url = "/bigdata/namespace/wdq/sparql?format=json&query=#{CGI.escape query}"
+    response = wikidata_server.get url
+    response_data = JSON.parse response.body
+
+    @diseases = {}
+    response_data['results']['bindings'].each do |disease|
+      q_number = disease["disease"]["value"][/Q.*/]
+      label = disease['diseaseLabel']['value']
+      next if label == q_number
+
+      @diseases[label] = q_number
+    end
+    @diseases
+  end
+
   def old_occupations
     return @old_occupations unless @old_occupations.nil?
+
     # Based on "Average lifespan by occupation" example
     query = <<~OLD_PROFESSIONS
       # Occupations by average birth year, filtered to show "old" professions

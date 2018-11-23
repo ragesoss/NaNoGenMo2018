@@ -54,7 +54,17 @@ class Entry
   end
 
   def image_url
-    @wikidata_entity['image']&.load&.[]('meta.thumb')
+    images = @wikidata_entity['image']
+    case images
+    when Array
+      images[0].load['meta.thumb']
+    when Reality::Link
+      images.load['meta.thumb']
+    else
+      nil
+    end
+  rescue
+    nil
   end
 
   def endemic_to
